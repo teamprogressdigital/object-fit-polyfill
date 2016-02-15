@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Object-Fit Polyfill</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <link rel="stylesheet" href="objectFit.css" />
+        <style type="text/css">
+            #demo-box {
+                position: fixed;
+                top: 0;
+                width: 60%;
+                height: 60%;
+                left: 20%;
+                top: 20%;
+            }
+            
+            #demo-select {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+            }
+        </style>
+    </head>
+    <body>
+        <select id="demo-select">
+            <option value="cover">object-fit: cover</option>
+            <option value="contain">object-fit: contain</option>
+            <option value="fill">object-fill: fill</option>
+        </select>
+        
+        <div class="object-fit-parent" id="demo-box">
+            <img class="object-fit" width="4608" height="3456" src="iphone.jpg" alt="" title="" />
+        </div>
+        
+        <script type="text/javascript" src="objectFit.js"></script>
+        <script type="text/javascript">
+            (function() {
+                var objectFit = new ObjectFit(),
+                    demoSelect = document.getElementById('demo-select'),
+                    demoImg = document.querySelector('#demo-box img');
+                    
+                demoSelect.addEventListener('change', function() {
+                    demoImg.setAttribute('data-type', this.value);
+                    
+                    // Reset elements after change
+                    objectFit.setElements();
+                    // If this is not executed after, the change will not happen
+                    // until the next time this is called, in either a resize
+                    // event, or a call to this function.
+                    objectFit.onResize();
+                });
+            })();
+        </script>
+    </body>
+</html>

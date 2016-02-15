@@ -1,0 +1,27 @@
+.object-fit-parent {
+    position: relative;
+    overflow: hidden;
+}
+
+.object-fit {
+    position: absolute;
+    top: 0;
+    width: 0;
+    object-fit: cover;
+}
+
+/**
+ * Set object-fit property by default so in modern browsers the browser does not
+ * have to wait until the script has executed to add the object-fit.
+ */
+.object-fit[data-type="cover"] {
+    object-fit: cover;
+}
+
+.object-fit[data-type="contain"] {
+    object-fit: contain;
+}
+
+.object-fit[data-type="fill"] {
+    object-fit: fill;
+}
