@@ -1,37 +1,6 @@
-/**
- * Function.prototype.bind polyfill, compliments of Mozilla Developer Network
- * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind
- */
+/*
 
-if (!Function.prototype.bind) {
-	Function.prototype.bind = function(oThis) {
-		if (typeof this !== 'function') {
-			// closest thing possible to the ECMAScript 5
-			// internal IsCallable function
-			throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
-		}
-
-		var aArgs   = Array.prototype.slice.call(arguments, 1),
-			fToBind = this,
-			fNOP    = function() {},
-			fBound  = function() {
-				return fToBind.apply(this instanceof fNOP
-						? this
-						: oThis,
-					aArgs.concat(Array.prototype.slice.call(arguments)));
-			};
-
-		fNOP.prototype = this.prototype;
-		fBound.prototype = new fNOP();
-
-		return fBound;
-	};
-}
-
-/**
- * ObjectFit class, used to replicate the behaviour of the CSS "background-size" property.
- * @type {{init: Function, setElements: Function, setEvents: Function, onResize: Function, getInfo: Function, setInfo: Function, backgroundCover: Function, backgroundContain: Function}}
- * @license
+ object-fit-polyfill v1.1
 
  The MIT License (MIT)
 
@@ -64,11 +33,16 @@ if (!Function.prototype.bind) {
 var ObjectFit = function(options) {
 	"use strict";
 
+	/* AVAILABLE OPTIONS */
 	this.options = {
 		selector: ".object-fit",
 		forceFallbackMode: false,
 		attachEvents: true,
-        throttleEvents: true
+        throttleEvents: true,
+		throttleInterval: 100,
+		autoAddParentClass: true,
+		parentNodeClassName: 'object-fit-parent',
+		fallbackClassName: 'object-fit-fallback'
 	};
 
     for(var key in options) {
@@ -106,7 +80,7 @@ ObjectFit.prototype = {
 
 		if(typeof this.options.selector !== "string") {
             if("console" in window) {
-                console.log("ObjectFit.prototype.useOptions - selector must be a string.");
+                console.log("ObjectFit.prototype.validateOptions - selector must be a string (String).");
             }
 
             error = true;
@@ -114,7 +88,7 @@ ObjectFit.prototype = {
 
         if(typeof this.options.forceFallbackMode !== "boolean") {
             if("console" in window) {
-                console.log("ObjectFit.prototype.useOptions - forceFallbackMode must be either true of false.");
+                console.log("ObjectFit.prototype.validateOptions - forceFallbackMode must be either true of false (Boolean).");
             }
 
             error = true;
@@ -122,7 +96,7 @@ ObjectFit.prototype = {
 
         if(typeof this.options.attachEvents !== "boolean") {
             if("console" in window) {
-                console.log("ObjectFit.prototype.useOptions - attachEvents must be either true of false.");
+                console.log("ObjectFit.prototype.validateOptions - attachEvents must be either true of false (Boolean).");
             }
 
             error = true;
@@ -130,11 +104,35 @@ ObjectFit.prototype = {
 
         if(typeof this.options.throttleEvents !== "boolean") {
             if("console" in window) {
-                console.log("ObjectFit.prototype.useOptions - throttleEvents must be either true of false.");
+                console.log("ObjectFit.prototype.validateOptions - throttleEvents must be either true of false (Boolean).");
             }
 
             error = true;
         }
+
+		if(typeof this.options.throttleInterval !== "number") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - throttleInterval must be an integer (Number)");
+			}
+		}
+
+		if(typeof this.options.autoAddParentClass !== "boolean") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - autoAddParentClass must be true of false (Boolean)");
+			}
+		}
+
+		if(typeof this.options.parentNodeClassName !== "string") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - parentNodeClassName must be a valid class (String)");
+			}
+		}
+
+		if(typeof this.options.fallbackClassName !== "string") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - fallbackClassName must be a valid class (String)");
+			}
+		}
 
         return !error;
 	},
@@ -174,12 +172,13 @@ ObjectFit.prototype = {
 		"use strict";
 
 		var nodeList = document.querySelectorAll(this.options.selector),
+			nodeListLen = nodeList.length,
             i;
 
 		this.objects = [ ];
 
 		/* we want to cache as much info as possible to speed up the script. */
-		for(i = 0; i < nodeList.length; ++i) {
+		for(i = 0; i < nodeListLen; ++i) {
 			var node = nodeList[i];
 
 			var type = node.getAttribute('data-type'),
@@ -189,9 +188,11 @@ ObjectFit.prototype = {
 				type = "cover"; // default type
 			}
 
+			ObjectFit.addClass(node.parentNode, this.options.parentNodeClassName);
+
 			// check if we need to cache the values, if on modern browser, the
 			// object-fit css property is used.
-			if(this.fallbackMode === true || className.indexOf(' fallback-mode ') !== -1) {
+			if(this.fallbackMode === true || ObjectFit.hasClass(node, this.options.fallbackClassName)) {
 				var newNode = {
 					width:	parseInt(node.getAttribute('width'), 10),
 					height: parseInt(node.getAttribute('height'), 10),
@@ -199,16 +200,25 @@ ObjectFit.prototype = {
 					type:	type
 				};
 
+				ObjectFit.addClass(node, this.options.fallbackClassName);
+
 				if(isNaN(newNode.width) || isNaN(newNode.height)) {
-					if(typeof console !== "undefined") console.log("ObjectFit.prototype.setElements: node is missing required attributes or attribute value is invalid ('width' or 'height')");
+					if(typeof console !== "undefined") {
+						console.log("ObjectFit.prototype.setElements: node is missing required width/height attributes, or attribute value is invalid.");
+					}
+
 					continue;
 				}
+
+				node.style.objectFit = 'fill'; // set to default value
 
 				this.objects.push(newNode);
 			} else {
 				node.style.objectFit = type;
 				node.style.width = "100%";
 				node.style.height = "100%";
+				node.style.left = 0;
+				node.style.top = 0;
 			}
 		}
 	},
@@ -238,15 +248,17 @@ ObjectFit.prototype = {
         };
 
         if(this.options.throttleEvents) {
-            resizeHandler = onResize;
+            resizeHandler = onResize; // Throttled function
         } else {
-            resizeHandler = this.onResize.bind(this);
+            resizeHandler = function() {
+				self.onResize();
+			};
         }
 
         if(window.addEventListener) {
-            window.addEventListener('resize', onResize);
+            window.addEventListener('resize', resizeHandler);
         } else {
-            window.attachEvent('onresize', onResize);
+            window.attachEvent('onresize', resizeHandler);
         }
 	},
 
@@ -260,14 +272,12 @@ ObjectFit.prototype = {
 			objects = this.objects,
 			objectsLength = objects.length;
 
-		if(objectsLength !== 0) {
-            for(i = 0; i < objectsLength; i++) {
-                var node = objects[i];
+        for(i = 0; i < objectsLength; i++) {
+            var node = objects[i];
 
-                var info = this.getInfo(node);
+            var info = this.getInfo(node);
 
-                this.setInfo(info, this.types[info.type](info));
-            }
+            this.setInfo(info, this.types[info.type](info));
         }
 	},
 
@@ -332,41 +342,27 @@ ObjectFit.prototype = {
 
 			return info;
 		}
-	},
-
-	helpers: {
-		/*
-		 * Courtesy of Lorenzo Polidori
-		 * http://stackoverflow.com/a/12621264/2529423
-		 */
-		has3d: function() {
-			if (!window.getComputedStyle) {
-				return false;
-			}
-
-			var el = document.createElement('p'),
-				has3d,
-				transforms = {
-					'webkitTransform':'-webkit-transform',
-					'OTransform':'-o-transform',
-					'msTransform':'-ms-transform',
-					'MozTransform':'-moz-transform',
-					'transform':'transform'
-				};
-
-			// Add it to the body to get the computed style.
-			document.body.insertBefore(el, null);
-
-			for (var t in transforms) {
-				if (el.style[t] !== undefined) {
-					el.style[t] = "translate3d(1px,1px,1px)";
-					has3d = window.getComputedStyle(el).getPropertyValue(transforms[t]);
-				}
-			}
-
-			document.body.removeChild(el);
-
-			return (has3d !== undefined && has3d.length > 0 && has3d !== "none");
-		}
 	}
+};
+
+ObjectFit.addClass = function(element, className) {
+	'use strict';
+
+	if(ObjectFit.hasClass(element, className)) {
+		return;
+	}
+
+	element.className = element.className + ' ' + className;
+};
+
+ObjectFit.removeClass = function(element, className) {
+	'use strict';
+
+	element.className = (' ' + element.className + ' ').replace(' ' + className + ' ', ' ');
+};
+
+ObjectFit.hasClass = function(element, className) {
+	'use strict';
+
+	return (' ' + element.className + ' ').indexOf(' ' + className + ' ') !== -1;
 };

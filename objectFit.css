@@ -25,3 +25,8 @@
 .object-fit[data-type="fill"] {
     object-fit: fill;
 }
+
+/* so fallback mode works in new browsers, if so required */
+.object-fit-fallback {
+	object-fit: fill;
+}
