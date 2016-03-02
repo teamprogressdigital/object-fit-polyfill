@@ -24,11 +24,11 @@ It is recommended that the ObjectFit instance is stored somewhere where it can b
 
 ### HTML Attributes
 Below, are all of the attributes `object-fit-polyfill` supports.
-* #### width
+* **width**
     An integer referring to the image's width. This is used in tandom with the `height` attribute to determine the aspect ratio of the image.
-* #### height
+* **height**
     An integer reffering to the image's height. This is used in tandom with the `width` attribute to determine the aspect ratio of the image.
-* #### data-type
+* **data-type**
     * `contain` - will emulate the behaviour of `object-fit: contain;`
     * `cover` - will emulate the behaviour of `object-fit: cover;`
     * `fill` - will emulate the behaviour of `object-fit: fill;`
