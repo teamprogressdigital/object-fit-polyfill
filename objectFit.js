@@ -38,103 +38,111 @@ var ObjectFit = function(options) {
 		selector: ".object-fit",
 		forceFallbackMode: false,
 		attachEvents: true,
-        throttleEvents: true,
+		throttleEvents: true,
 		throttleInterval: 100,
 		autoAddParentClass: true,
 		parentNodeClassName: 'object-fit-parent',
 		fallbackClassName: 'object-fit-fallback'
 	};
 
-    for(var key in options) {
-        if(options.hasOwnProperty(key)) {
-            this.options[key] = options[key];
-        }
-    }
+	for(var key in options) {
+		if(options.hasOwnProperty(key)) {
+			this.options[key] = options[key];
+		}
+	}
 
-    if(this.validateOptions()) {
-        if(typeof document.body.style.objectFit !== "string" || this.options.forceFallbackMode) {
-            this.fallbackMode = true;
-        }
+	if(this.validateOptions()) {
+		if(typeof document.body.style.objectFit !== "string" || this.options.forceFallbackMode) {
+			this.fallbackMode = true;
+		}
 
-        this.setElements();
+		this.setElements();
 
-        if(this.options.attachEvents !== false) {
-            this.setEvents();
-        }
+		if(this.options.attachEvents !== false) {
+			this.setEvents();
+		}
 
-        if(this.objects.length > 0) {
-            this.onResize();
-        }
-    }
+		if(this.objects.length > 0) {
+			this.onResize();
+		}
+	}
 };
 
 ObjectFit.prototype = {
-    /**
-     *
-     * @param {object} userOptions - An object containing user-provided options
-     * @returns {object|null} If the options passed were valid, a new object
-     * containing this options and defaults is returned. Otherwise, null is returned.
-     */
+	/**
+	 *
+	 * @param {object} userOptions - An object containing user-provided options
+	 * @returns {object|null} If the options passed were valid, a new object
+	 * containing this options and defaults is returned. Otherwise, null is returned.
+	 */
 	validateOptions: function() {
-        var error = false;
+		var error = false;
 
 		if(typeof this.options.selector !== "string") {
-            if("console" in window) {
-                console.log("ObjectFit.prototype.validateOptions - selector must be a string (String).");
-            }
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - selector must be a string (String).");
+			}
 
-            error = true;
-        }
+			error = true;
+		}
 
-        if(typeof this.options.forceFallbackMode !== "boolean") {
-            if("console" in window) {
-                console.log("ObjectFit.prototype.validateOptions - forceFallbackMode must be either true of false (Boolean).");
-            }
+		if(typeof this.options.forceFallbackMode !== "boolean") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - forceFallbackMode must be either true of false (Boolean).");
+			}
 
-            error = true;
-        }
+			error = true;
+		}
 
-        if(typeof this.options.attachEvents !== "boolean") {
-            if("console" in window) {
-                console.log("ObjectFit.prototype.validateOptions - attachEvents must be either true of false (Boolean).");
-            }
+		if(typeof this.options.attachEvents !== "boolean") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - attachEvents must be either true of false (Boolean).");
+			}
 
-            error = true;
-        }
+			error = true;
+		}
 
-        if(typeof this.options.throttleEvents !== "boolean") {
-            if("console" in window) {
-                console.log("ObjectFit.prototype.validateOptions - throttleEvents must be either true of false (Boolean).");
-            }
+		if(typeof this.options.throttleEvents !== "boolean") {
+			if("console" in window) {
+				console.log("ObjectFit.prototype.validateOptions - throttleEvents must be either true of false (Boolean).");
+			}
 
-            error = true;
-        }
+			error = true;
+		}
 
 		if(typeof this.options.throttleInterval !== "number") {
 			if("console" in window) {
 				console.log("ObjectFit.prototype.validateOptions - throttleInterval must be an integer (Number)");
 			}
+			
+			error = true;
 		}
 
 		if(typeof this.options.autoAddParentClass !== "boolean") {
 			if("console" in window) {
 				console.log("ObjectFit.prototype.validateOptions - autoAddParentClass must be true of false (Boolean)");
 			}
+			
+			error = true;
 		}
 
 		if(typeof this.options.parentNodeClassName !== "string") {
 			if("console" in window) {
 				console.log("ObjectFit.prototype.validateOptions - parentNodeClassName must be a valid class (String)");
 			}
+			
+			error = true;
 		}
 
 		if(typeof this.options.fallbackClassName !== "string") {
 			if("console" in window) {
 				console.log("ObjectFit.prototype.validateOptions - fallbackClassName must be a valid class (String)");
 			}
+			
+			error = true;
 		}
 
-        return !error;
+		return !error;
 	},
 
 	/**
@@ -173,7 +181,7 @@ ObjectFit.prototype = {
 
 		var nodeList = document.querySelectorAll(this.options.selector),
 			nodeListLen = nodeList.length,
-            i;
+			i;
 
 		this.objects = [ ];
 
@@ -182,7 +190,7 @@ ObjectFit.prototype = {
 			var node = nodeList[i];
 
 			var type = node.getAttribute('data-type'),
-                className = ' ' + node.className + ' ';
+				className = ' ' + node.className + ' ';
 
 			if("cover,fill,contain".indexOf(type) === -1) {
 				type = "cover"; // default type
@@ -229,37 +237,37 @@ ObjectFit.prototype = {
 	setEvents: function() {
 		"use strict";
 
-        var throttle = null,
-            self = this,
-            resizeHandler;
+		var throttle = null,
+			self = this,
+			resizeHandler;
 
-        function onThrottleTimeout() {
-            self.onResize();
+		function onThrottleTimeout() {
+			self.onResize();
 
-            throttle = null;
-        }
+			throttle = null;
+		}
 
-        function onResize() {
-            if(throttle !== null) {
-                return;
-            }
+		function onResize() {
+			if(throttle !== null) {
+				return;
+			}
 
-            throttle = setTimeout(onThrottleTimeout, 100);
-        };
+			throttle = setTimeout(onThrottleTimeout, 100);
+		};
 
-        if(this.options.throttleEvents) {
-            resizeHandler = onResize; // Throttled function
-        } else {
-            resizeHandler = function() {
+		if(this.options.throttleEvents) {
+			resizeHandler = onResize; // Throttled function
+		} else {
+			resizeHandler = function() {
 				self.onResize();
 			};
-        }
+		}
 
-        if(window.addEventListener) {
-            window.addEventListener('resize', resizeHandler);
-        } else {
-            window.attachEvent('onresize', resizeHandler);
-        }
+		if(window.addEventListener) {
+			window.addEventListener('resize', resizeHandler);
+		} else {
+			window.attachEvent('onresize', resizeHandler);
+		}
 	},
 
 	/**
@@ -272,13 +280,13 @@ ObjectFit.prototype = {
 			objects = this.objects,
 			objectsLength = objects.length;
 
-        for(i = 0; i < objectsLength; i++) {
-            var node = objects[i];
+		for(i = 0; i < objectsLength; i++) {
+			var node = objects[i];
 
-            var info = this.getInfo(node);
+			var info = this.getInfo(node);
 
-            this.setInfo(info, this.types[info.type](info));
-        }
+			this.setInfo(info, this.types[info.type](info));
+		}
 	},
 
 	types: {
